@@ -1,0 +1,189 @@
+openapi: 3.0.3
+
+info:
+  title: API de pedidos de una pastelería
+  version: 1.0.0
+  description: Contrato para crear y consultar pedidos.
+
+servers:
+  - url: http://127.0.0.1:5000
+
+paths:
+  /pedidos:
+    post:
+      summary: Registrar un nuevo pedido
+
+      requestBody:
+        required: true
+
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PedidoEntrada"
+
+      responses:
+        "201":
+          description: Pedido registrado correctamente
+
+          content:
+            application/json:
+              schema:
+                type: object
+
+                properties:
+                  mensaje:
+                    type: string
+
+                  pedido:
+                    $ref: "#/components/schemas/Pedido"
+
+        "400":
+          description: Información incompleta o inválida
+
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /pedidos/fecha/{fecha}:
+    get:
+      summary: Consultar pedidos por fecha
+
+      parameters:
+        - name: fecha
+          in: path
+          required: true
+          description: Fecha en formato AAAA-MM-DD
+
+          schema:
+            type: string
+            format: date
+
+      responses:
+        "200":
+          description: Pedidos encontrados
+
+          headers:
+            X-Cache:
+              description: Indica si se utilizó el caché
+
+              schema:
+                type: string
+                enum:
+                  - HIT
+                  - MISS
+
+            Cache-Control:
+              description: Tiempo de duración del caché
+
+              schema:
+                type: string
+
+          content:
+            application/json:
+              schema:
+                type: object
+
+                properties:
+                  fecha:
+                    type: string
+                    format: date
+
+                  cantidad:
+                    type: integer
+                    minimum: 0
+
+                  pedidos:
+                    type: array
+
+                    items:
+                      $ref: "#/components/schemas/Pedido"
+
+                  cache:
+                    type: string
+
+                    enum:
+                      - HIT
+                      - MISS
+
+components:
+  schemas:
+    PedidoEntrada:
+      type: object
+
+      required:
+        - cliente
+        - tipoPastel
+        - porciones
+        - decoracion
+        - fechaEntrega
+        - horaEntrega
+        - tiempoPreparacion
+
+      properties:
+        cliente:
+          type: string
+          example: José Ramírez
+
+        tipoPastel:
+          type: string
+          example: Pastel de chocolate
+
+        porciones:
+          type: integer
+          minimum: 1
+          example: 20
+
+        decoracion:
+          type: string
+          example: Cumpleaños
+
+        fechaEntrega:
+          type: string
+          format: date
+          example: 2026-12-20
+
+        horaEntrega:
+          type: string
+          example: "17:30"
+
+        tiempoPreparacion:
+          type: integer
+          minimum: 1
+          description: Tiempo expresado en minutos
+          example: 180
+
+        estado:
+          type: string
+          default: pendiente
+
+          enum:
+            - pendiente
+            - en preparación
+            - listo
+            - entregado
+            - cancelado
+
+    Pedido:
+      allOf:
+        - type: object
+
+          properties:
+            id:
+              type: integer
+              example: 1
+
+        - $ref: "#/components/schemas/PedidoEntrada"
+
+    Error:
+      type: object
+
+      properties:
+        error:
+          type: string
+
+        campos:
+          type: array
+
+          items:
+            type: string
